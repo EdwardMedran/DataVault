@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataVault — Upload Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --success: #00e676;
+    --error: #ff1744;
+    --warn: #ffab00;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  body::after {
+    content: '';
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%);
+    top: -200px;
+    right: -200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo-text span {
+    color: var(--accent);
+  }
+
+  .header-badge {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px var(--border);
+  }
+
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* Panels */
+  .panel { display: none; animation: fadeUp 0.3s ease; }
+  .panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 20px;
+  }
+
+  .title-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+    display: block;
+  }
+  .title-input:focus { border-color: var(--accent); }
+  .title-input::placeholder { color: var(--muted); }
+
+  .textarea-wrap {
+    position: relative;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 280px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    tab-size: 2;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+
+  .char-counter {
+    position: absolute;
+    bottom: 12px;
+    right: 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .char-counter.warn { color: var(--warn); }
+
+  /* File Drop Zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    background: var(--surface2);
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.03);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 40px;
+    margin-bottom: 14px;
+    display: block;
+    filter: grayscale(0.3);
+  }
+
+  .drop-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .drop-sub {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+
+  .drop-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 18px;
+  }
+
+  .type-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* File Queue */
+  .file-queue {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .file-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: fadeUp 0.2s ease;
+  }
+
+  .file-ext {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+  }
+
+  .file-info { flex: 1; min-width: 0; }
+
+  .file-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .file-status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .file-status.pending  { color: var(--muted); background: rgba(107,107,138,0.15); }
+  .file-status.uploading{ color: var(--accent); background: rgba(0,229,255,0.1); }
+  .file-status.done     { color: var(--success); background: rgba(0,230,118,0.1); }
+  .file-status.error    { color: var(--error); background: rgba(255,23,68,0.1); }
+
+  .file-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .file-remove:hover { color: var(--error); }
+
+  /* Progress bar */
+  .progress-bar-wrap {
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    margin-top: 6px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar-wrap.active { display: block; }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 1px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  /* Submit Buttons */
+  .submit-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn-secondary {
+    padding: 11px 22px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-primary {
+    padding: 11px 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,229,255,0.25); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-primary .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast Notifications */
+  .toast-container {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 260px;
+    max-width: 380px;
+    animation: slideIn 0.3s ease;
+    pointer-events: all;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .toast.success { border-left: 3px solid var(--success); }
+  .toast.error   { border-left: 3px solid var(--error); }
+  .toast.info    { border-left: 3px solid var(--accent); }
+
+  .toast-icon { font-size: 18px; flex-shrink: 0; }
+
+  .toast-msg { flex: 1; }
+
+  .toast-detail {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes slideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(20px); }
+  }
+
+  /* Log Panel */
+  .log-panel {
+    margin-top: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .log-header-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .log-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  .log-clear {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .log-clear:hover { color: var(--text); }
+
+  .log-body {
+    padding: 16px 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .log-entry {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    line-height: 1.5;
+  }
+
+  .log-time { color: var(--muted); flex-shrink: 0; }
+  .log-entry.success .log-msg { color: var(--success); }
+  .log-entry.error .log-msg   { color: var(--error); }
+  .log-entry.info .log-msg    { color: var(--accent); }
+  .log-entry.warn .log-msg    { color: var(--warn); }
+
+  .log-empty {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .wrapper { padding: 28px 16px 60px; }
+    .text-meta { flex-direction: column; }
+    .toast-container { bottom: 16px; right: 16px; left: 16px; }
+    .toast { min-width: unset; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-icon">⬡</div>
+    <div class="logo-text">Data<span>Vault</span></div>
+    <div class="header-badge">v1.0 · UPLOAD CENTER</div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('text', this)">✏️ &nbsp;Texto</button>
+    <button class="tab-btn" onclick="switchTab('file', this)">📁 &nbsp;Archivos</button>
+  </div>
+
+  <!-- TEXT PANEL -->
+  <div class="panel active" id="panel-text">
+    <div class="card">
+      <div class="card-title">Enviar texto a DynamoDB</div>
+      <input type="text" id="textTitle" placeholder="Título del texto..." class="title-input" />
+      <div class="textarea-wrap">
+        <textarea id="textContent" placeholder="Pega aquí tu texto, bloque de código, configuración, logs...&#10;&#10;Soporta hasta ~500,000 caracteres (bloques muy grandes)." oninput="updateCounter()"></textarea>
+        <span class="char-counter" id="charCounter">0 chars</span>
+      </div>
+      <div class="submit-row">
+        <button class="btn-secondary" onclick="clearText()">Limpiar</button>
+        <button class="btn-primary" id="btnSendText" onclick="sendText()">
+          Enviar a DynamoDB →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILE PANEL -->
+  <div class="panel" id="panel-file">
+    <div class="card">
+      <div class="card-title">Subir archivos a S3</div>
+      <input type="text" id="fileTitle" placeholder="Título del documento..." class="title-input" />
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)" />
+        <span class="drop-icon">📦</span>
+        <div class="drop-title">Arrastra archivos o haz clic aquí</div>
+        <div class="drop-sub">Cualquier tipo · Máx. 50 MB por archivo</div>
+        <div class="drop-types">
+          <span class="type-tag">.txt</span>
+          <span class="type-tag">.pdf</span>
+          <span class="type-tag">.py</span>
+          <span class="type-tag">.java</span>
+          <span class="type-tag">.json</span>
+          <span class="type-tag">.csv</span>
+          <span class="type-tag">.png / .jpg</span>
+          <span class="type-tag">.zip</span>
+          <span class="type-tag">+ más</span>
+        </div>
+      </div>
+
+      <div class="file-queue" id="fileQueue"></div>
+
+      <div class="submit-row">
+        <button class="btn-secondary" onclick="clearFiles()">Limpiar cola</button>
+        <button class="btn-primary" id="btnSendFiles" onclick="sendFiles()">
+          Subir a S3 →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Log -->
+  <div class="log-panel">
+    <div class="log-header">
+      <div class="log-header-title">
+        <div class="log-dot"></div>
+        Activity Log
+      </div>
+      <button class="log-clear" onclick="clearLog()">Limpiar</button>
+    </div>
+    <div class="log-body" id="logBody">
+      <div class="log-empty" id="logEmpty">Sin actividad reciente.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────────────────
+const API_URL = 'http://localhost:8080/api';
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let fileQueue = []; // { file, id, status }
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function uid() {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024)       return bytes + ' B';
+  if (bytes < 1048576)    return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
+function now() {
+  return new Date().toLocaleTimeString('es-PE', { hour12: false });
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─── TEXT ────────────────────────────────────────────────────────────────────
+function updateCounter() {
+  const len = document.getElementById('textContent').value.length;
+  const el = document.getElementById('charCounter');
+  el.textContent = len.toLocaleString() + ' chars';
+  el.classList.toggle('warn', len > 400000);
+}
+
+function clearText() {
+  document.getElementById('textContent').value = '';
+  document.getElementById('textTitle').value = '';
+  updateCounter();
+}
+
+async function sendText() {
+  const content = document.getElementById('textContent').value.trim();
+  const title   = document.getElementById('textTitle').value.trim() || 'sin título';
+
+  if (!content) { toast('warn', 'El campo de texto está vacío.'); return; }
+
+  const btn = document.getElementById('btnSendText');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Enviando...';
+
+  const payload = {
+    id: uid(),
+    title,
+    content,
+    charCount: content.length,
+    createdAt: new Date().toISOString()
+  };
+
+  log('info', `Enviando texto "${title}" (${content.length.toLocaleString()} chars) → DynamoDB`);
+
+  try {
+    const res = await fetch(`${API_URL}/texts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} — ${errBody || res.statusText}`);
+    }
+
+    const data = await res.json().catch(() => ({}));
+    log('success', `Texto guardado en DynamoDB. ID: ${data.id || payload.id}`);
+    toast('success', 'Texto enviado correctamente', `ID: ${data.id || payload.id}`);
+  } catch (err) {
+    log('error', `Error al enviar texto: ${err.message}`);
+    toast('error', 'Error al enviar texto', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Enviar a DynamoDB →';
+  }
+}
+
+// ─── FILES ───────────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+  for (const file of files) {
+    if (file.size > 52428800) { // 50MB
+      toast('warn', `"${file.name}" supera 50MB`, 'Archivo omitido');
+      continue;
+    }
+    const id = uid();
+    fileQueue.push({ file, id, status: 'pending' });
+    renderFileItem({ file, id, status: 'pending' });
+  }
+  // reset input so same file can be re-added
+  document.getElementById('fileInput').value = '';
+}
+
+function getExtColor(ext) {
+  const map = {
+    pdf:  ['#ff6b6b','#fff0'],
+    py:   ['#3b82f6','#e8f0ff'],
+    java: ['#f59e0b','#fff8e1'],
+    js:   ['#eab308','#fefce8'],
+    ts:   ['#3b82f6','#eff6ff'],
+    json: ['#10b981','#ecfdf5'],
+    csv:  ['#22c55e','#f0fdf4'],
+    txt:  ['#94a3b8','#f1f5f9'],
+    zip:  ['#8b5cf6','#f5f3ff'],
+    png:  ['#ec4899','#fdf2f8'],
+    jpg:  ['#f97316','#fff7ed'],
+    jpeg: ['#f97316','#fff7ed'],
+    gif:  ['#a855f7','#faf5ff'],
+    xml:  ['#06b6d4','#ecfeff'],
+    sql:  ['#6366f1','#eef2ff'],
+    sh:   ['#14b8a6','#f0fdfa'],
+  };
+  const lext = (ext || '').toLowerCase();
+  return map[lext] || ['#6b7280', '#f9fafb'];
+}
+
+function renderFileItem({ file, id, status }) {
+  const ext = file.name.split('.').pop() || '?';
+  const [bgColor] = getExtColor(ext);
+  const queue = document.getElementById('fileQueue');
+
+  const item = document.createElement('div');
+  item.className = 'file-item';
+  item.id = 'fitem-' + id;
+  item.innerHTML = `
+    <div class="file-ext" style="background:${bgColor}22;color:${bgColor};border:1px solid ${bgColor}44;">
+      ${ext.slice(0,4)}
+    </div>
+    <div class="file-info">
+      <div class="file-name">${file.name}</div>
+      <div class="file-size">${formatBytes(file.size)}</div>
+      <div class="progress-bar-wrap" id="prog-${id}">
+        <div class="progress-bar" id="progbar-${id}"></div>
+      </div>
+    </div>
+    <span class="file-status pending" id="fstatus-${id}">En cola</span>
+    <button class="file-remove" onclick="removeFile('${id}')" title="Quitar">✕</button>
+  `;
+  queue.appendChild(item);
+}
+
+function setFileStatus(id, status, label) {
+  const el = document.getElementById('fstatus-' + id);
+  if (!el) return;
+  el.className = 'file-status ' + status;
+  el.textContent = label;
+}
+
+function removeFile(id) {
+  fileQueue = fileQueue.filter(f => f.id !== id);
+  const el = document.getElementById('fitem-' + id);
+  if (el) el.remove();
+}
+
+function clearFiles() {
+  fileQueue = [];
+  document.getElementById('fileQueue').innerHTML = '';
+}
+
+async function sendFiles() {
+  const pending = fileQueue.filter(f => f.status === 'pending');
+  if (!pending.length) { toast('warn', 'No hay archivos pendientes en la cola.'); return; }
+
+  const btn = document.getElementById('btnSendFiles');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Subiendo...';
+
+  let ok = 0, fail = 0;
+
+  for (const item of pending) {
+    item.status = 'uploading';
+    setFileStatus(item.id, 'uploading', 'Subiendo...');
+
+    const progWrap = document.getElementById('prog-' + item.id);
+    const progBar  = document.getElementById('progbar-' + item.id);
+    if (progWrap) progWrap.classList.add('active');
+
+    log('info', `Subiendo: ${item.file.name} (${formatBytes(item.file.size)}) → S3`);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', item.file);
+      const fileTitle = document.getElementById('fileTitle').value.trim() || item.file.name;
+      formData.append('title', fileTitle);
+      formData.append('originalName', item.file.name);
+      formData.append('uploadedAt', new Date().toISOString());
+
+      // Simulated progress (XHR for real progress)
+      const result = await uploadWithProgress(
+        `${API_URL}/files/upload`,
+        formData,
+        (pct) => { if (progBar) progBar.style.width = pct + '%'; }
+      );
+
+      item.status = 'done';
+      setFileStatus(item.id, 'done', '✓ Subido');
+      if (progBar) progBar.style.width = '100%';
+      log('success', `${item.file.name} subido. S3 key: ${result.s3Key || '?'}`);
+      ok++;
+    } catch (err) {
+      item.status = 'error';
+      setFileStatus(item.id, 'error', 'Error');
+      log('error', `${item.file.name}: ${err.message}`);
+      fail++;
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Subir a S3 →';
+
+  if (ok > 0 && fail === 0) toast('success', `${ok} archivo(s) subidos correctamente`);
+  else if (fail > 0) toast('error', `${fail} error(s), ${ok} éxitos`, 'Revisa el log para detalles');
+}
+
+function uploadWithProgress(url, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', e => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch { resolve({}); }
+      } else {
+        reject(new Error(`HTTP ${xhr.status} — ${xhr.statusText}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => reject(new Error('Network error')));
+    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+
+    xhr.open('POST', url, true);
+    xhr.send(formData);
+  });
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+const ICONS = { success: '✅', error: '❌', warn: '⚠️', info: 'ℹ️' };
+
+function toast(type, msg, detail = '') {
+  const container = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type === 'warn' ? 'info' : type);
+  t.innerHTML = `
+    <span class="toast-icon">${ICONS[type] || 'ℹ️'}</span>
+    <div class="toast-msg">
+      ${msg}
+      ${detail ? `<div class="toast-detail">${detail}</div>` : ''}
+    </div>`;
+  container.appendChild(t);
+  setTimeout(() => {
+    t.style.animation = 'slideOut 0.3s ease forwards';
+    setTimeout(() => t.remove(), 300);
+  }, 4000);
+}
+
+// ─── LOG ─────────────────────────────────────────────────────────────────────
+function log(type, msg) {
+  const body  = document.getElementById('logBody');
+  const empty = document.getElementById('logEmpty');
+  if (empty) empty.remove();
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.innerHTML = `<span class="log-time">${now()}</span><span class="log-msg">${msg}</span>`;
+  body.appendChild(entry);
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearLog() {
+  const body = document.getElementById('logBody');
+  body.innerHTML = '<div class="log-empty" id="logEmpty">Sin actividad reciente.</div>';
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+log('info', 'DataVault iniciado. Configura tu API Base URL arriba.');
+</script>
+</body>
+</html>
