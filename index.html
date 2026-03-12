@@ -904,7 +904,8 @@ async function sendFiles() {
       item.status = 'done';
       setFileStatus(item.id, 'done', '✓ Subido');
       if (progBar) progBar.style.width = '100%';
-      log('success', `${item.file.name} subido correctamente. Título: ${result.data?.title || fileTitle}`);
+      const uploadedTitle = result?.data?.title || fileTitle;
+      log('success', `"${uploadedTitle}" subido correctamente ✓`);
       ok++;
     } catch (err) {
       item.status = 'error';
@@ -917,7 +918,7 @@ async function sendFiles() {
   btn.disabled = false;
   btn.innerHTML = 'Subir a S3 →';
 
-  if (ok > 0 && fail === 0) toast('success', `${ok} archivo(s) subidos correctamente`);
+  if (ok > 0 && fail === 0) toast('success', `${ok} archivo(s) subidos a S3 correctamente`);
   else if (fail > 0) toast('error', `${fail} error(s), ${ok} éxitos`, 'Revisa el log para detalles');
 }
 
@@ -931,10 +932,16 @@ function uploadWithProgress(url, formData, onProgress) {
 
     xhr.addEventListener('load', () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        try { resolve(JSON.parse(xhr.responseText)); }
-        catch { resolve({}); }
+        try {
+          const parsed = JSON.parse(xhr.responseText);
+          resolve(parsed);
+        } catch {
+          resolve({});
+        }
       } else {
-        reject(new Error(`HTTP ${xhr.status} — ${xhr.statusText}`));
+        let errMsg = xhr.statusText;
+        try { errMsg = JSON.parse(xhr.responseText)?.message || errMsg; } catch {}
+        reject(new Error(`HTTP ${xhr.status} — ${errMsg}`));
       }
     });
 
