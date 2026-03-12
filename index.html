@@ -640,7 +640,7 @@
       <div class="card-title">Subir archivos a S3</div>
       <input type="text" id="fileTitle" placeholder="Título del documento..." class="title-input" />
       <div class="drop-zone" id="dropZone">
-        <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)" />
+        <input type="file" id="fileInput" multiple accept="*/*" onchange="handleFiles(this.files)" />
         <span class="drop-icon">📦</span>
         <div class="drop-title">Arrastra archivos o haz clic aquí</div>
         <div class="drop-sub">Cualquier tipo · Máx. 50 MB por archivo</div>
@@ -689,7 +689,7 @@
 
 <script>
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const API_URL = 'https://jp6e2ypfmgt2fhsf4h7cnhsqma0lhekg.lambda-url.sa-east-1.on.aws/';
+const API_URL = 'https://jp6e2ypfmgt2fhsf4h7cnhsqma0lhekg.lambda-url.sa-east-1.on.aws';
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let fileQueue = []; // { file, id, status }
@@ -752,7 +752,7 @@ async function sendText() {
   log('info', `Enviando texto "${title}" (${content.length.toLocaleString()} chars) → DynamoDB`);
 
   try {
-    const res = await fetch(`${API_URL}/texts`, {
+    const res = await fetch(`${API_URL}/api/texts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -764,8 +764,8 @@ async function sendText() {
     }
 
     const data = await res.json().catch(() => ({}));
-    log('success', `Texto guardado en DynamoDB. ID: ${data.id || payload.id}`);
-    toast('success', 'Texto enviado correctamente', `ID: ${data.id || payload.id}`);
+    log('success', `Texto "${payload.title}" guardado en DynamoDB. ID: ${data.data?.id || payload.id}`);
+    toast('success', 'Texto enviado correctamente', `Título: ${payload.title}`);
   } catch (err) {
     log('error', `Error al enviar texto: ${err.message}`);
     toast('error', 'Error al enviar texto', err.message);
@@ -896,7 +896,7 @@ async function sendFiles() {
 
       // Simulated progress (XHR for real progress)
       const result = await uploadWithProgress(
-        `${API_URL}/files/upload`,
+        `${API_URL}/api/files/upload`,
         formData,
         (pct) => { if (progBar) progBar.style.width = pct + '%'; }
       );
@@ -904,7 +904,7 @@ async function sendFiles() {
       item.status = 'done';
       setFileStatus(item.id, 'done', '✓ Subido');
       if (progBar) progBar.style.width = '100%';
-      log('success', `${item.file.name} subido. S3 key: ${result.s3Key || '?'}`);
+      log('success', `${item.file.name} subido correctamente. Título: ${result.data?.title || fileTitle}`);
       ok++;
     } catch (err) {
       item.status = 'error';
@@ -985,7 +985,7 @@ function clearLog() {
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
-log('info', 'DataVault iniciado. Configura tu API Base URL arriba.');
+log('info', 'DataVault iniciado. Conectado a AWS Lambda.');
 </script>
 </body>
 </html>
