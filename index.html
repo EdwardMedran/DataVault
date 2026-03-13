@@ -98,7 +98,6 @@
   }
 
   .header-badge {
-    margin-left: auto;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--muted);
@@ -106,6 +105,36 @@
     padding: 4px 10px;
     border-radius: 20px;
     letter-spacing: 1px;
+  }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-explorer {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 16px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .btn-explorer:hover {
+    background: rgba(0, 229, 255, 0.08);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
   }
 
 
@@ -607,7 +636,10 @@
   <header>
     <div class="logo-icon">⬡</div>
     <div class="logo-text">Data<span>Vault</span></div>
-    <div class="header-badge">v1.0 · UPLOAD CENTER</div>
+    <div class="header-right">
+      <div class="header-badge">v1.0 · UPLOAD CENTER</div>
+      <a class="btn-explorer" href="viewer.html" target="_blank">🗂 Ver archivos →</a>
+    </div>
   </header>
 
   <!-- Tabs -->
