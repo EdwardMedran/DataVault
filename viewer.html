@@ -813,7 +813,7 @@
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
         <div class="sidebar-heading">Accesos</div>
-        <div class="nav-item" onclick="window.open('https://edwardmedran.github.io/DataVault/', '_blank')">
+        <div class="nav-item" onclick="window.location.href='https://edwardmedran.github.io/DataVault/'">
           <span class="nav-icon">⬆️</span> Subir datos
         </div>
       </div>
@@ -936,7 +936,7 @@
     <span class="mnav-icon">📁</span>
     Archivos
   </button>
-  <button class="mobile-nav-item" onclick="window.open('https://edwardmedran.github.io/DataVault/', '_blank')">
+  <button class="mobile-nav-item" onclick="window.location.href='https://edwardmedran.github.io/DataVault/'">
     <span class="mnav-icon">⬆️</span>
     Subir
   </button>
@@ -1155,7 +1155,8 @@ function downloadFileByIndex(i) {
   const f        = window._fileMap[i];
   const parts    = f.key.split('/');
   const fileName = parts[parts.length - 1];
-  downloadFile(f.url, fileName);
+  // Usar downloadUrl (con Content-Disposition: attachment) para forzar descarga
+  downloadFile(f.downloadUrl || f.url, fileName);
 }
 
 function openFile(f) {
@@ -1168,7 +1169,7 @@ function openFile(f) {
   document.getElementById('modalMeta').textContent  = `${fmtBytes(f.sizeBytes||0)} · ${mime} · ${fmtDate(f.lastModified)}`;
   document.getElementById('modalFooter').innerHTML  = `
     <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
-    <button class="btn btn-accent" onclick="downloadFile('${esc(f.url)}','${esc(fileName)}')">⬇ Descargar</button>
+    <button class="btn btn-accent" onclick="downloadFile('${esc(f.downloadUrl || f.url)}','${esc(fileName)}')">⬇ Descargar</button>
   `;
 
   const body = document.getElementById('modalBody');
@@ -1186,7 +1187,7 @@ function openFile(f) {
         body.innerHTML = `<div style="text-align:center;padding:32px 20px;color:var(--muted)">
           <div style="font-size:36px;margin-bottom:12px">📄</div>
           <div style="font-size:13px;margin-bottom:16px">No se pudo previsualizar en el navegador.</div>
-          <button class="btn btn-accent" onclick="window.open('${f.url}','_blank')" style="margin:0 auto">⬇ Abrir archivo</button>
+          <button class="btn btn-accent" onclick="window.location.href='${f.url}'" style="margin:0 auto">⬇ Abrir archivo</button>
         </div>`;
       });
   } else {
@@ -1204,16 +1205,19 @@ function openFile(f) {
 function downloadFile(url, name) {
   toast('info', `Descargando ${name}...`);
 
-  // En móvil, fetch falla por CORS de S3 — usamos window.open como fallback
-  // La URL firmada ya incluye permisos, el browser la descarga directamente
+  // iOS Safari ignora el atributo download en URLs cross-origin (S3).
+  // La downloadUrl tiene Content-Disposition:attachment → S3 fuerza la descarga.
+  // Usamos location.href para no abrir pestañas nuevas en ningún dispositivo.
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   if (isMobile) {
-    window.open(url, '_blank');
-    toast('ok', 'Abriendo archivo...');
+    // En móvil: navegar en la misma pestaña — S3 enviará Content-Disposition:attachment
+    // que le dice al browser que descargue en vez de mostrar
+    window.location.href = url;
     return;
   }
 
+  // En desktop: fetch → blob → descarga silenciosa sin abrir pestaña
   fetch(url)
     .then(r => {
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1221,9 +1225,9 @@ function downloadFile(url, name) {
     })
     .then(b => { triggerDownload(b, name); toast('ok', 'Descarga completada'); })
     .catch(() => {
-      // Fallback: abrir en nueva pestaña si fetch falla
-      window.open(url, '_blank');
-      toast('info', 'Abriendo en nueva pestaña');
+      // Fallback desktop: misma pestaña
+      window.location.href = url;
+      toast('info', 'Iniciando descarga...');
     });
 }
 
