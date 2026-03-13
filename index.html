@@ -620,11 +620,56 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
   /* Responsive */
-  @media (max-width: 600px) {
-    .wrapper { padding: 28px 16px 60px; }
-    .text-meta { flex-direction: column; }
-    .toast-container { bottom: 16px; right: 16px; left: 16px; }
-    .toast { min-width: unset; }
+  @media (max-width: 768px) {
+    /* Layout */
+    .wrapper { padding: 20px 14px 60px; }
+
+    /* Header */
+    header { margin-bottom: 28px; gap: 10px; flex-wrap: wrap; }
+    .logo-icon { width: 36px; height: 36px; font-size: 16px; border-radius: 10px; }
+    .logo-text { font-size: 18px; }
+    .header-right { gap: 8px; }
+    .header-badge { display: none; }
+    .btn-explorer { padding: 6px 12px; font-size: 10px; }
+
+    /* Tabs */
+    .tabs { padding: 4px; gap: 3px; }
+    .tab-btn { padding: 9px 12px; font-size: 13px; }
+
+    /* Card */
+    .card { padding: 18px 16px; }
+    .card-title { font-size: 11px; margin-bottom: 14px; }
+
+    /* Drop zone */
+    .drop-zone { padding: 32px 16px; }
+    .drop-icon { font-size: 32px; }
+    .drop-title { font-size: 14px; }
+    .drop-sub { font-size: 12px; }
+    .drop-types { gap: 4px; }
+
+    /* File queue */
+    .file-item { padding: 10px 12px; gap: 10px; }
+    .file-ext { width: 30px; height: 30px; font-size: 9px; border-radius: 6px; }
+    .file-name { font-size: 12px; }
+    .file-size { font-size: 10px; }
+
+    /* Buttons */
+    .submit-row { gap: 8px; }
+    .btn-primary, .btn-secondary { padding: 10px 18px; font-size: 13px; }
+
+    /* Toast */
+    .toast-container { bottom: 16px; right: 12px; left: 12px; }
+    .toast { min-width: unset; font-size: 13px; }
+
+    /* Log */
+    .log-panel { margin-top: 20px; }
+    .log-body { font-size: 11px; max-height: 160px; }
+  }
+
+  @media (max-width: 400px) {
+    .submit-row { flex-direction: column; }
+    .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+    .tab-btn { font-size: 12px; padding: 8px 8px; }
   }
 </style>
 </head>

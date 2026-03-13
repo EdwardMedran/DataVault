@@ -672,14 +672,102 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+  /* ── MOBILE BOTTOM NAV ── */
+  .mobile-nav {
+    display: none;
+  }
+
   @media (max-width: 768px) {
+    /* Layout */
     .main { grid-template-columns: 1fr; }
     .sidebar { display: none; }
-    .stats-row { grid-template-columns: 1fr 1fr; }
-    .texts-head, .texts-row { grid-template-columns: 1fr 90px 70px; }
-    .texts-head .hide-mobile, .texts-row .hide-mobile { display: none; }
-    .files-head, .files-row { grid-template-columns: 50px 1fr 80px; }
-    .files-head .hide-mobile, .files-row .hide-mobile { display: none; }
+    .content { padding: 16px; }
+
+    /* Topbar */
+    .topbar { padding: 0 16px; gap: 10px; }
+    .topbar-divider, .topbar-label { display: none; }
+    .refresh-btn span.icon { display: none; }
+    .refresh-btn { padding: 6px 10px; }
+
+    /* Stats */
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-card { padding: 14px 16px; }
+    .stat-value { font-size: 22px; }
+    .stat-value[style*="font-size:16px"] { font-size: 13px !important; }
+
+    /* Panel header */
+    .panel-header { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 16px; }
+    .search-input { width: 100%; }
+    .search-box { width: 100%; }
+    .search-wrap { width: 100%; }
+
+    /* Table — ocultar columnas secundarias */
+    .hide-mobile { display: none !important; }
+
+    /* Texts table */
+    .texts-head  { grid-template-columns: 1fr 90px 64px; }
+    .texts-row   { grid-template-columns: 1fr 90px 64px; }
+
+    /* Files table — solo tipo + nombre + acciones */
+    .files-head  { grid-template-columns: 44px 1fr 64px; }
+    .files-row   { grid-template-columns: 44px 1fr 64px; }
+
+    /* Cells */
+    .cell-title  { font-size: 12px; }
+    .cell-mono   { font-size: 10px; }
+    .ext-badge   { width: 30px; height: 30px; font-size: 8px; border-radius: 6px; }
+    .table-head  { padding: 10px 12px; font-size: 9px; }
+    .table-row   { padding: 12px 12px; }
+    .act-btn     { width: 26px; height: 26px; font-size: 12px; }
+
+    /* Modal */
+    .modal { max-width: 100%; border-radius: 12px 12px 0 0; }
+    .modal-overlay { align-items: flex-end; padding: 0; }
+    .modal-body { padding: 16px; }
+    .modal-header { padding: 16px; }
+    .modal-footer { padding: 12px 16px; }
+    .pdf-preview { height: 300px; }
+    .text-preview { font-size: 11px; padding: 14px; }
+
+    /* Bottom nav — reemplaza sidebar en mobile */
+    .mobile-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      z-index: 200;
+      padding: 8px 0 env(safe-area-inset-bottom, 8px);
+    }
+
+    .mobile-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 8px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: color 0.15s;
+      border: none;
+      background: none;
+      font-family: var(--sans);
+    }
+
+    .mobile-nav-item .mnav-icon { font-size: 18px; }
+    .mobile-nav-item.active { color: var(--accent); }
+
+    /* Espacio para bottom nav */
+    .content { padding-bottom: 80px; }
+  }
+
+  @media (max-width: 400px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .texts-head, .texts-row { grid-template-columns: 1fr 80px 56px; }
+    .files-head, .files-row { grid-template-columns: 36px 1fr 56px; }
   }
 </style>
 </head>
@@ -835,6 +923,22 @@
   </div>
 </div>
 
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav">
+  <button class="mobile-nav-item active" id="mnav-texts" onclick="switchPanel('texts'); setMobileNav('texts')">
+    <span class="mnav-icon">📝</span>
+    Textos
+  </button>
+  <button class="mobile-nav-item" id="mnav-files" onclick="switchPanel('files'); setMobileNav('files')">
+    <span class="mnav-icon">📁</span>
+    Archivos
+  </button>
+  <button class="mobile-nav-item" onclick="window.open('https://edwardmedran.github.io/DataVault/', '_blank')">
+    <span class="mnav-icon">⬆️</span>
+    Subir
+  </button>
+</div>
+
 <!-- TOASTS -->
 <div class="toast-stack" id="toasts"></div>
 
@@ -862,6 +966,12 @@ function switchPanel(name) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
+}
+
+function setMobileNav(name) {
+  document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('mnav-' + name);
+  if (el) el.classList.add('active');
 }
 
 // ── LOAD TEXTS ───────────────────────────────────────────────────────────────
