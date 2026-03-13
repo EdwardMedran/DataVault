@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataVault — Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #07080d;
+    --bg2:      #0d0f17;
+    --surface:  #12141f;
+    --surface2: #1a1d2e;
+    --border:   #252840;
+    --accent:   #00e5ff;
+    --accent2:  #7c3aed;
+    --green:    #00e676;
+    --red:      #ff1744;
+    --yellow:   #ffd600;
+    --text:     #dde1f0;
+    --muted:    #5a5f7a;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'Space Grotesk', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Grid bg */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 32px;
+    height: 56px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .logo-hex {
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .logo-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .logo-name span { color: var(--accent); }
+
+  .topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+  }
+
+  .topbar-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .refresh-btn.spinning .icon { animation: spin 0.8s linear infinite; }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes spin  { to{transform:rotate(360deg)} }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    margin-bottom: 8px;
+  }
+
+  .sidebar-heading {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0 20px 10px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+
+  .nav-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(0,229,255,0.04);
+  }
+
+  .nav-item .nav-icon { font-size: 15px; }
+
+  .nav-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 10px;
+    color: var(--muted);
+  }
+
+  .nav-item.active .nav-badge {
+    background: rgba(0,229,255,0.1);
+    border-color: rgba(0,229,255,0.3);
+    color: var(--accent);
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 20px;
+  }
+
+  /* ── CONTENT ── */
+  .content {
+    padding: 32px;
+    overflow-y: auto;
+  }
+
+  /* ── PANEL ── */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── PANEL HEADER ── */
+  .panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .panel-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .panel-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Search */
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .search-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px 8px 36px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    width: 220px;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  .search-box {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0.6;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .stat-value.accent { color: var(--accent); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-head {
+    display: grid;
+    padding: 12px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .texts-head  { grid-template-columns: 1fr 120px 100px 110px 80px; }
+  .files-head  { grid-template-columns: 60px 1fr 100px 120px 90px 80px; }
+
+  .table-row {
+    display: grid;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(37,40,64,0.6);
+    align-items: center;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+
+  .texts-row  { grid-template-columns: 1fr 120px 100px 110px 80px; }
+  .files-row  { grid-template-columns: 60px 1fr 100px 120px 90px 80px; }
+
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: rgba(0,229,255,0.03); }
+
+  .cell-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 12px;
+  }
+
+  .cell-mono {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .cell-date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* File ext badge */
+  .ext-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .act-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .act-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.05); }
+  .act-btn.danger:hover { border-color: var(--red); color: var(--red); background: rgba(255,23,68,0.05); }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-text { font-size: 14px; }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 4px;
+    height: 13px;
+  }
+
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(7,8,13,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(12px);
+    transition: transform 0.2s;
+    overflow: hidden;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .modal-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* Text content preview */
+  .text-preview {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* Image preview */
+  .img-preview {
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+  }
+
+  /* PDF preview */
+  .pdf-preview {
+    width: 100%;
+    height: 450px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-accent {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    color: #fff;
+  }
+
+  .btn-accent:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,229,255,0.2); }
+
+  /* Toast */
+  .toast-stack {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1000;
+  }
+
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 240px;
+    animation: toastIn 0.25s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .toast.ok   { border-left: 3px solid var(--green); }
+  .toast.err  { border-left: 3px solid var(--red); }
+  .toast.info { border-left: 3px solid var(--accent); }
+
+  @keyframes toastIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .texts-head, .texts-row { grid-template-columns: 1fr 90px 70px; }
+    .texts-head .hide-mobile, .texts-row .hide-mobile { display: none; }
+    .files-head, .files-row { grid-template-columns: 50px 1fr 80px; }
+    .files-head .hide-mobile, .files-row .hide-mobile { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-hex">⬡</div>
+      <div class="logo-name">Data<span>Vault</span></div>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-label">Explorer</div>
+    <div class="topbar-right">
+      <div class="status-dot"></div>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadAll()">
+        <span class="icon">↻</span> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Almacenamiento</div>
+        <div class="nav-item active" id="nav-texts" onclick="switchPanel('texts')">
+          <span class="nav-icon">📝</span> Textos
+          <span class="nav-badge" id="badge-texts">—</span>
+        </div>
+        <div class="nav-item" id="nav-files" onclick="switchPanel('files')">
+          <span class="nav-icon">📁</span> Archivos
+          <span class="nav-badge" id="badge-files">—</span>
+        </div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Accesos</div>
+        <div class="nav-item" onclick="window.open('https://edwardmedran.github.io/DataVault/', '_blank')">
+          <span class="nav-icon">⬆️</span> Subir datos
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- TEXTS PANEL -->
+      <div class="panel active" id="panel-texts">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Textos · DynamoDB</div>
+            <div class="panel-sub">Registros almacenados en dataVaultDB</div>
+          </div>
+          <div class="search-wrap">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" id="searchTexts" placeholder="Buscar textos..." oninput="filterTexts()" />
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-row" id="statsTexts">
+          <div class="stat-card">
+            <div class="stat-label">Total registros</div>
+            <div class="stat-value accent" id="statTextCount">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total caracteres</div>
+            <div class="stat-value" id="statTextChars">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Último guardado</div>
+            <div class="stat-value" style="font-size:16px;padding-top:4px" id="statTextLast">—</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-head texts-head">
+            <span>Título</span>
+            <span class="hide-mobile">ID</span>
+            <span>Caracteres</span>
+            <span class="hide-mobile">Fecha</span>
+            <span style="text-align:right">Acciones</span>
+          </div>
+          <div id="textsList"></div>
+        </div>
+      </div>
+
+      <!-- FILES PANEL -->
+      <div class="panel" id="panel-files">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Archivos · S3</div>
+            <div class="panel-sub">Objetos en data-vault-bucket/uploads/</div>
+          </div>
+          <div class="search-wrap">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" id="searchFiles" placeholder="Buscar archivos..." oninput="filterFiles()" />
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-row" id="statsFiles">
+          <div class="stat-card">
+            <div class="stat-label">Total archivos</div>
+            <div class="stat-value accent" id="statFileCount">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tamaño total</div>
+            <div class="stat-value" id="statFileSize">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Último subido</div>
+            <div class="stat-value" style="font-size:16px;padding-top:4px" id="statFileLast">—</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-head files-head">
+            <span>Tipo</span>
+            <span>Nombre / Ruta</span>
+            <span class="hide-mobile">Tamaño</span>
+            <span class="hide-mobile">Modificado</span>
+            <span class="hide-mobile">Tipo MIME</span>
+            <span style="text-align:right">Acciones</span>
+          </div>
+          <div id="filesList"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">—</div>
+        <div class="modal-meta" id="modalMeta">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-stack" id="toasts"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const API = 'https://x5hv7hf7mkfr6kfwffwqxji7y40htdbk.lambda-url.sa-east-1.on.aws';
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let allTexts = [];
+let allFiles = [];
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', loadAll);
+
+async function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  await Promise.all([loadTexts(), loadFiles()]);
+  btn.classList.remove('spinning');
+}
+
+// ── PANEL SWITCH ──────────────────────────────────────────────────────────────
+function switchPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+}
+
+// ── LOAD TEXTS ───────────────────────────────────────────────────────────────
+async function loadTexts() {
+  const list = document.getElementById('textsList');
+  list.innerHTML = skeletonRows(4, 'texts-row');
+
+  try {
+    const res  = await fetch(`${API}/api/texts`);
+    const data = await res.json();
+    allTexts   = (data.data || []).sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+    renderTexts(allTexts);
+    updateTextStats(allTexts);
+    document.getElementById('badge-texts').textContent = allTexts.length;
+  } catch (e) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Error al cargar: ${e.message}</div></div>`;
+    toast('err', 'No se pudieron cargar los textos');
+  }
+}
+
+function renderTexts(items) {
+  const list = document.getElementById('textsList');
+  if (!items.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No hay textos guardados aún.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(t => `
+    <div class="table-row texts-row" onclick="openText('${t.id}')">
+      <div class="cell-title" title="${esc(t.title)}">${esc(t.title || '—')}</div>
+      <div class="cell-mono hide-mobile" title="${esc(t.id)}">${esc(t.id || '—').slice(0, 18)}…</div>
+      <div class="cell-mono">${fmtNum(t.charCount || 0)} chars</div>
+      <div class="cell-date hide-mobile">${fmtDate(t.createdAt)}</div>
+      <div class="actions" onclick="event.stopPropagation()">
+        <button class="act-btn" title="Ver" onclick="openText('${t.id}')">👁</button>
+        <button class="act-btn" title="Descargar" onclick="downloadText('${t.id}')">⬇</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterTexts() {
+  const q = document.getElementById('searchTexts').value.toLowerCase();
+  renderTexts(allTexts.filter(t =>
+    (t.title||'').toLowerCase().includes(q) ||
+    (t.id||'').toLowerCase().includes(q)
+  ));
+}
+
+function updateTextStats(items) {
+  document.getElementById('statTextCount').textContent = items.length;
+  const total = items.reduce((s, t) => s + (t.charCount || 0), 0);
+  document.getElementById('statTextChars').textContent = fmtNum(total);
+  const last = items[0]?.createdAt;
+  document.getElementById('statTextLast').textContent = last ? fmtDate(last) : '—';
+}
+
+// ── LOAD FILES ───────────────────────────────────────────────────────────────
+async function loadFiles() {
+  const list = document.getElementById('filesList');
+  list.innerHTML = skeletonRows(4, 'files-row');
+
+  try {
+    const res  = await fetch(`${API}/api/files`);
+    const data = await res.json();
+    allFiles   = (data.data || []).sort((a,b) => (b.lastModified||'').localeCompare(a.lastModified||''));
+    renderFiles(allFiles);
+    updateFileStats(allFiles);
+    document.getElementById('badge-files').textContent = allFiles.length;
+  } catch (e) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Error al cargar: ${e.message}</div></div>`;
+    toast('err', 'No se pudieron cargar los archivos');
+  }
+}
+
+function renderFiles(items) {
+  const list = document.getElementById('filesList');
+  if (!items.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No hay archivos subidos aún.</div></div>`;
+    return;
+  }
+
+  // Guardar referencia en mapa para evitar problemas con JSON en atributos HTML
+  window._fileMap = {};
+  items.forEach((f, i) => { window._fileMap[i] = f; });
+
+  list.innerHTML = items.map((f, i) => {
+    const parts    = f.key.split('/');
+    const fileName = parts[parts.length - 1];
+    const folder   = parts.slice(0, -1).join('/');
+    const ext      = fileName.split('.').pop().toLowerCase();
+    const [bg, fg] = extColor(ext);
+    const mime     = f.contentType || resolveMime(ext);
+
+    return `
+    <div class="table-row files-row" onclick="openFileByIndex(${i})">
+      <div>
+        <div class="ext-badge" style="background:${bg}22;color:${bg};border:1px solid ${bg}44">${ext.slice(0,4)}</div>
+      </div>
+      <div>
+        <div class="cell-title" title="${esc(fileName)}">${esc(fileName)}</div>
+        <div class="cell-mono" style="margin-top:2px;font-size:10px">${esc(folder)}/</div>
+      </div>
+      <div class="cell-mono hide-mobile">${fmtBytes(f.sizeBytes || 0)}</div>
+      <div class="cell-date hide-mobile">${fmtDate(f.lastModified)}</div>
+      <div class="cell-mono hide-mobile" style="font-size:10px">${mime}</div>
+      <div class="actions" onclick="event.stopPropagation()">
+        <button class="act-btn" title="Ver/Previsualizar" onclick="openFileByIndex(${i})">👁</button>
+        <button class="act-btn" title="Descargar" onclick="downloadFileByIndex(${i})">⬇</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterFiles() {
+  const q = document.getElementById('searchFiles').value.toLowerCase();
+  renderFiles(allFiles.filter(f =>
+    (f.key||'').toLowerCase().includes(q)
+  ));
+}
+
+function updateFileStats(items) {
+  document.getElementById('statFileCount').textContent = items.length;
+  const total = items.reduce((s, f) => s + (f.sizeBytes || 0), 0);
+  document.getElementById('statFileSize').textContent = fmtBytes(total);
+  const last = items[0]?.lastModified;
+  document.getElementById('statFileLast').textContent = last ? fmtDate(last) : '—';
+}
+
+// ── OPEN TEXT MODAL ──────────────────────────────────────────────────────────
+async function openText(id) {
+  const item = allTexts.find(t => t.id === id);
+  if (!item) return;
+
+  document.getElementById('modalTitle').textContent = item.title || '—';
+  document.getElementById('modalMeta').textContent  = `${fmtNum(item.charCount||0)} caracteres · ${fmtDate(item.createdAt)} · ID: ${item.id}`;
+  document.getElementById('modalBody').innerHTML    = `<div class="text-preview">Cargando contenido...</div>`;
+  document.getElementById('modalFooter').innerHTML  = `
+    <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
+    <button class="btn btn-accent" onclick="downloadText('${id}')">⬇ Descargar .txt</button>
+  `;
+  openModal();
+
+  // Fetch full content
+  try {
+    const res  = await fetch(`${API}/api/texts/${id}`);
+    const data = await res.json();
+    const content = data.data?.content || data.content || '(sin contenido)';
+    document.getElementById('modalBody').innerHTML = `<pre class="text-preview">${esc(content)}</pre>`;
+  } catch {
+    document.getElementById('modalBody').innerHTML = `<div class="text-preview" style="color:var(--muted)">No se pudo cargar el contenido completo.</div>`;
+  }
+}
+
+async function downloadText(id) {
+  const item = allTexts.find(t => t.id === id);
+  if (!item) return;
+
+  toast('info', 'Descargando texto...');
+  try {
+    const res     = await fetch(`${API}/api/texts/${id}`);
+    const data    = await res.json();
+    const content = data.data?.content || data.content || '';
+    const blob    = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    triggerDownload(blob, `${item.title || id}.txt`);
+    toast('ok', 'Texto descargado');
+  } catch {
+    toast('err', 'Error al descargar el texto');
+  }
+}
+
+// ── OPEN FILE MODAL ──────────────────────────────────────────────────────────
+function openFileByIndex(i) {
+  openFile(window._fileMap[i]);
+}
+
+function downloadFileByIndex(i) {
+  const f        = window._fileMap[i];
+  const parts    = f.key.split('/');
+  const fileName = parts[parts.length - 1];
+  downloadFile(f.url, fileName);
+}
+
+function openFile(f) {
+  const parts    = f.key.split('/');
+  const fileName = parts[parts.length - 1];
+  const ext      = fileName.split('.').pop().toLowerCase();
+  const mime     = f.contentType || resolveMime(ext);
+
+  document.getElementById('modalTitle').textContent = fileName;
+  document.getElementById('modalMeta').textContent  = `${fmtBytes(f.sizeBytes||0)} · ${mime} · ${fmtDate(f.lastModified)}`;
+  document.getElementById('modalFooter').innerHTML  = `
+    <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
+    <button class="btn btn-accent" onclick="downloadFile('${esc(f.url)}','${esc(fileName)}')">⬇ Descargar</button>
+  `;
+
+  const body = document.getElementById('modalBody');
+
+  if (['png','jpg','jpeg','gif','webp','svg'].includes(ext)) {
+    body.innerHTML = `<img class="img-preview" src="${esc(f.url)}" alt="${esc(fileName)}" onerror="this.src='';this.alt='No se pudo cargar la imagen'" />`;
+  } else if (ext === 'pdf') {
+    body.innerHTML = `<iframe class="pdf-preview" src="${esc(f.url)}"></iframe>`;
+  } else if (['txt','py','js','ts','json','csv','html','css','sql','java','sh','xml','md'].includes(ext)) {
+    body.innerHTML = `<div class="text-preview">Cargando...</div>`;
+    fetch(f.url)
+      .then(r => r.text())
+      .then(t => { body.innerHTML = `<pre class="text-preview">${esc(t.slice(0, 50000))}</pre>`; })
+      .catch(() => { body.innerHTML = `<div class="text-preview" style="color:var(--muted)">No se pudo previsualizar este archivo.</div>`; });
+  } else {
+    body.innerHTML = `
+      <div style="text-align:center;padding:48px 20px;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:16px">📦</div>
+        <div style="font-size:14px;margin-bottom:8px">Vista previa no disponible para <strong style="color:var(--text)">.${ext}</strong></div>
+        <div style="font-family:var(--mono);font-size:11px">Usa el botón Descargar para abrir el archivo.</div>
+      </div>`;
+  }
+
+  openModal();
+}
+
+function downloadFile(url, name) {
+  toast('info', `Descargando ${name}...`);
+  fetch(url)
+    .then(r => r.blob())
+    .then(b => { triggerDownload(b, name); toast('ok', 'Descarga completada'); })
+    .catch(() => toast('err', 'Error al descargar el archivo'));
+}
+
+// ── MODAL HELPERS ────────────────────────────────────────────────────────────
+function openModal()  { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModalOnBg(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+// ── DOWNLOAD HELPER ──────────────────────────────────────────────────────────
+function triggerDownload(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function toast(type, msg) {
+  const icons = { ok: '✅', err: '❌', info: 'ℹ️' };
+  const el    = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── SKELETON ────────────────────────────────────────────────────────────────
+function skeletonRows(n, cls) {
+  return Array(n).fill(0).map(() =>
+    `<div class="table-row ${cls}">${Array(cls === 'texts-row' ? 5 : 6).fill('<div class="skeleton"></div>').join('')}</div>`
+  ).join('');
+}
+
+// ── FORMAT HELPERS ───────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' })
+           + ' ' + d.toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit', hour12:false });
+  } catch { return iso; }
+}
+
+function fmtNum(n) {
+  return Number(n).toLocaleString('es-PE');
+}
+
+function fmtBytes(b) {
+  if (b < 1024)     return b + ' B';
+  if (b < 1048576)  return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function resolveMime(ext) {
+  const m = { png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', gif:'image/gif',
+    webp:'image/webp', svg:'image/svg+xml', pdf:'application/pdf', txt:'text/plain',
+    json:'application/json', csv:'text/csv', py:'text/x-python', js:'application/javascript',
+    ts:'application/typescript', html:'text/html', css:'text/css', java:'text/x-java-source',
+    sql:'application/sql', sh:'application/x-sh', xml:'application/xml', zip:'application/zip',
+    docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    mp4:'video/mp4', mp3:'audio/mpeg' };
+  return m[ext] || 'application/octet-stream';
+}
+
+function extColor(ext) {
+  const c = { pdf:'#ff6b6b', py:'#3b82f6', java:'#f59e0b', js:'#eab308', ts:'#3b82f6',
+    json:'#10b981', csv:'#22c55e', txt:'#94a3b8', zip:'#8b5cf6', png:'#ec4899',
+    jpg:'#f97316', jpeg:'#f97316', gif:'#a855f7', xml:'#06b6d4', sql:'#6366f1',
+    sh:'#14b8a6', mp4:'#f43f5e', mp3:'#8b5cf6', svg:'#06b6d4', docx:'#2563eb',
+    xlsx:'#16a34a', webp:'#ec4899' };
+  return [c[ext] || '#6b7280', '#fff'];
+}
+</script>
+</body>
+</html>
