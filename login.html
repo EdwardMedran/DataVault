@@ -4,424 +4,176 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DataVault — Acceso</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:      #07080d;
-    --bg2:     #0d0f17;
-    --surface: #12141f;
-    --border:  #252840;
-    --accent:  #00e5ff;
-    --accent2: #7c3aed;
-    --green:   #00e676;
-    --red:     #ff1744;
-    --text:    #dde1f0;
-    --muted:   #5a5f7a;
-    --mono:    'IBM Plex Mono', monospace;
-    --sans:    'Space Grotesk', sans-serif;
+    --bg:#080b10;--bg2:#0e1219;--surface:#131820;--surface2:#1a2030;
+    --border:#1e2a3a;--border2:#253040;
+    --green:#00ff87;--purple:#a855f7;--blue:#38bdf8;--red:#f87171;
+    --text:#e2e8f0;--muted:#475569;--muted2:#64748b;
+    --sans:'Outfit',sans-serif;--mono:'Fira Code',monospace;
   }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-
-  /* Grid bg */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
-    background-size: 48px 48px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Glow orb */
-  body::after {
-    content: '';
-    position: fixed;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
-    bottom: -150px;
-    left: -100px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .glow-top {
-    position: fixed;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(0,229,255,0.07) 0%, transparent 70%);
-    top: -100px;
-    right: -100px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Scanlines */
-  .scanlines {
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg, transparent, transparent 2px,
-      rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
-    );
-    pointer-events: none;
-    z-index: 999;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 420px;
-    padding: 24px;
-    animation: fadeIn 0.5s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* Logo */
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 40px;
-    justify-content: center;
-  }
-
-  .logo-hex {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    animation: pulse-hex 3s ease infinite;
-  }
-
-  @keyframes pulse-hex {
-    0%,100% { filter: brightness(1); }
-    50%      { filter: brightness(1.3) drop-shadow(0 0 8px rgba(0,229,255,0.5)); }
-  }
-
-  .logo-name {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-  }
-
-  .logo-name span { color: var(--accent); }
-
-  /* Card */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 36px 32px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-  }
-
-  .card-title {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    margin-bottom: 6px;
-  }
-
-  .card-sub {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 32px;
-    letter-spacing: 0.5px;
-  }
-
-  /* Form */
-  .field {
-    margin-bottom: 18px;
-  }
-
-  .field-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: block;
-  }
-
-  .field-wrap {
-    position: relative;
-  }
-
-  .field-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 15px;
-    pointer-events: none;
-  }
-
-  .field-input {
-    width: 100%;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px 12px 42px;
-    font-family: var(--sans);
-    font-size: 14px;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    -webkit-appearance: none;
-  }
-
-  .field-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
-  }
-
-  .field-input::placeholder { color: var(--muted); }
-
-  /* Toggle password */
-  .toggle-pw {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px;
-    transition: color 0.15s;
-  }
-
-  .toggle-pw:hover { color: var(--text); }
-
-  /* New password panel */
-  .new-pw-panel {
-    display: none;
-    background: rgba(0,229,255,0.04);
-    border: 1px solid rgba(0,229,255,0.15);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 18px;
-  }
-
-  .new-pw-panel.visible { display: block; animation: fadeIn 0.3s ease; }
-
-  .new-pw-panel .field { margin-bottom: 14px; }
-  .new-pw-panel .field:last-child { margin-bottom: 0; }
-
-  .new-pw-note {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--accent);
-    margin-bottom: 14px;
-    letter-spacing: 0.3px;
-  }
-
-  /* Submit btn */
-  .btn-submit {
-    width: 100%;
-    padding: 14px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border: none;
-    border-radius: 12px;
-    font-family: var(--sans);
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 8px;
-    letter-spacing: 0.3px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .btn-submit:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(0,229,255,0.25);
-  }
-
-  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-  .spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    vertical-align: middle;
-    margin-right: 8px;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Error msg */
-  .error-msg {
-    display: none;
-    background: rgba(255,23,68,0.08);
-    border: 1px solid rgba(255,23,68,0.25);
-    border-radius: 10px;
-    padding: 12px 16px;
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--red);
-    margin-bottom: 18px;
-    animation: fadeIn 0.2s ease;
-  }
-
-  .error-msg.visible { display: block; }
-
-  /* Footer */
-  .card-footer {
-    margin-top: 24px;
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.5px;
-  }
-
-  .status-dot {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: blink 2s infinite;
-    margin-right: 6px;
-    vertical-align: middle;
-  }
-
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  @media (max-width: 480px) {
-    .container { padding: 16px; }
-    .card { padding: 28px 20px; }
-    .card-title { font-size: 18px; }
-  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  .bg-mesh{position:fixed;inset:0;z-index:0;background:
+    radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,255,135,.06) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 90%,rgba(168,85,247,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 50% at 50% 50%,rgba(56,189,248,.03) 0%,transparent 70%)}
+  .bg-grid{position:fixed;inset:0;z-index:0;
+    background-image:linear-gradient(rgba(0,255,135,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,135,.025) 1px,transparent 1px);background-size:60px 60px}
+  .orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;
+    animation:drift 12s ease-in-out infinite}
+  .orb-1{width:350px;height:350px;background:rgba(0,255,135,.07);top:-100px;left:-100px}
+  .orb-2{width:280px;height:280px;background:rgba(168,85,247,.09);bottom:-80px;right:-80px;animation-delay:-5s}
+  .orb-3{width:200px;height:200px;background:rgba(56,189,248,.05);top:40%;right:5%;animation-delay:-9s}
+  @keyframes drift{0%,100%{transform:translate(0,0)}40%{transform:translate(12px,-18px)}70%{transform:translate(-8px,12px)}}
+  .container{position:relative;z-index:1;width:100%;max-width:440px;padding:24px;
+    animation:rise .6s cubic-bezier(.16,1,.3,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .logo{display:flex;align-items:center;gap:14px;margin-bottom:36px;justify-content:center}
+  .logo-mark{width:48px;height:48px;display:flex;align-items:center;justify-content:center}
+  .logo-mark svg{width:48px;height:48px;filter:drop-shadow(0 0 12px rgba(0,255,135,.5));
+    animation:lpulse 3s ease-in-out infinite}
+  @keyframes lpulse{0%,100%{filter:drop-shadow(0 0 8px rgba(0,255,135,.4))}
+    50%{filter:drop-shadow(0 0 22px rgba(0,255,135,.7))}}
+  .logo-name{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1}
+  .logo-name em{font-style:normal;background:linear-gradient(135deg,var(--green),var(--blue));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .logo-tag{font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:2px;margin-top:2px}
+  .card{background:rgba(19,24,32,.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border:1px solid var(--border2);border-radius:24px;padding:40px 36px;position:relative;overflow:hidden;
+    box-shadow:0 0 0 1px rgba(0,255,135,.04),0 24px 56px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
+  .card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(0,255,135,.4),rgba(168,85,247,.4),transparent)}
+  .card-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+  .card-sub{font-family:var(--mono);font-size:11px;color:var(--muted2);letter-spacing:1px;
+    display:flex;align-items:center;gap:8px;margin-bottom:28px}
+  .card-sub::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 6px var(--green);animation:blink 2s infinite;flex-shrink:0}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .error-msg{display:none;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);
+    border-radius:12px;padding:12px 16px;font-family:var(--mono);font-size:12px;color:var(--red);
+    margin-bottom:20px;gap:8px}
+  .error-msg.visible{display:flex;align-items:center}
+  .error-msg.visible::before{content:"⚠";font-size:14px;flex-shrink:0}
+  .field{margin-bottom:20px}
+  .field-label{font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:2px;
+    text-transform:uppercase;margin-bottom:8px;display:block}
+  .field-wrap{position:relative}
+  .field-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:15px;
+    pointer-events:none;opacity:.5;color:var(--green)}
+  .field-input{width:100%;background:rgba(8,11,16,.9);border:1px solid var(--border2);
+    border-radius:12px;padding:14px 16px 14px 46px;font-family:var(--sans);font-size:15px;
+    font-weight:500;color:var(--text);outline:none;transition:all .2s;-webkit-appearance:none}
+  .field-input:focus{border-color:var(--green);
+    box-shadow:0 0 0 3px rgba(0,255,135,.07),0 0 24px rgba(0,255,135,.04)}
+  .field-input::placeholder{color:var(--muted)}
+  .toggle-pw{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;
+    padding:4px;transition:color .15s}
+  .toggle-pw:hover{color:var(--text)}
+  .new-pw-panel{display:none;background:rgba(0,255,135,.03);border:1px solid rgba(0,255,135,.12);
+    border-radius:14px;padding:20px;margin-bottom:20px}
+  .new-pw-panel.visible{display:block;animation:rise .3s ease}
+  .new-pw-note{font-family:var(--mono);font-size:11px;color:var(--green);margin-bottom:16px;opacity:.85}
+  .new-pw-panel .field{margin-bottom:14px}
+  .new-pw-panel .field:last-child{margin-bottom:0}
+  .btn-submit{width:100%;padding:15px;
+    background:linear-gradient(135deg,rgba(0,255,135,.12),rgba(168,85,247,.12));
+    border:1px solid rgba(0,255,135,.25);border-radius:14px;font-family:var(--sans);
+    font-size:15px;font-weight:700;color:var(--green);cursor:pointer;transition:all .25s;
+    margin-top:8px;letter-spacing:.5px;position:relative;overflow:hidden}
+  .btn-submit:hover:not(:disabled){border-color:rgba(0,255,135,.5);
+    box-shadow:0 0 28px rgba(0,255,135,.12),0 8px 24px rgba(0,0,0,.4);transform:translateY(-1px)}
+  .btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,255,135,.2);
+    border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite;
+    vertical-align:middle;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .card-footer{margin-top:28px;text-align:center;font-family:var(--mono);font-size:10px;
+    color:var(--muted);letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .footer-sep{opacity:.3}
+  @media(max-width:480px){.container{padding:16px}.card{padding:28px 20px}}
 </style>
 </head>
 <body>
-
-<div class="glow-top"></div>
-<div class="scanlines"></div>
-
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 <div class="container">
-
   <div class="logo">
-    <div class="logo-hex">⬡</div>
-    <div class="logo-name">Data<span>Vault</span></div>
+    <div class="logo-mark">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="24,2 46,13 46,35 24,46 2,35 2,13" fill="none" stroke="url(#g1)" stroke-width="1.5"/>
+        <polygon points="24,9 39,17 39,31 24,39 9,31 9,17" fill="rgba(0,255,135,0.05)" stroke="url(#g2)" stroke-width="1"/>
+        <circle cx="24" cy="24" r="5.5" fill="url(#g3)"/>
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="48" y2="48">
+            <stop offset="0%" stop-color="#00ff87"/><stop offset="100%" stop-color="#a855f7"/>
+          </linearGradient>
+          <linearGradient id="g2" x1="0" y1="0" x2="48" y2="48">
+            <stop offset="0%" stop-color="#00ff87" stop-opacity=".5"/><stop offset="100%" stop-color="#a855f7" stop-opacity=".5"/>
+          </linearGradient>
+          <radialGradient id="g3"><stop offset="0%" stop-color="#00ff87"/><stop offset="100%" stop-color="#38bdf8"/></radialGradient>
+        </defs>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-name">Data<em>Vault</em></div>
+      <div class="logo-tag">SECURE STORAGE</div>
+    </div>
   </div>
-
   <div class="card">
     <div class="card-title">Acceso seguro</div>
-    <div class="card-sub">AUTENTICACIÓN REQUERIDA · AWS COGNITO</div>
-
+    <div class="card-sub">AUTENTICACIÓN · AWS COGNITO</div>
     <div class="error-msg" id="errorMsg"></div>
-
-    <!-- Campo usuario -->
     <div class="field">
       <label class="field-label" for="username">Usuario</label>
       <div class="field-wrap">
-        <span class="field-icon">👤</span>
-        <input
-          class="field-input"
-          id="username"
-          type="text"
-          placeholder="tu usuario"
-          autocomplete="username"
-          autocapitalize="none"
-        />
+        <span class="field-icon">▸</span>
+        <input class="field-input" id="username" type="text" placeholder="tu usuario" autocomplete="username" autocapitalize="none"/>
       </div>
     </div>
-
-    <!-- Campo contraseña -->
     <div class="field">
       <label class="field-label" for="password">Contraseña</label>
       <div class="field-wrap">
-        <span class="field-icon">🔒</span>
-        <input
-          class="field-input"
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          autocomplete="current-password"
-        />
+        <span class="field-icon">●</span>
+        <input class="field-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password"/>
         <button class="toggle-pw" type="button" onclick="togglePw('password', this)">👁</button>
       </div>
     </div>
-
-    <!-- Panel nueva contraseña (primer login) -->
     <div class="new-pw-panel" id="newPwPanel">
-      <div class="new-pw-note">⚠ Es tu primer acceso — debes establecer una contraseña nueva.</div>
+      <div class="new-pw-note">▸ Primer acceso — establece tu contraseña definitiva</div>
       <div class="field">
         <label class="field-label" for="newPassword">Nueva contraseña</label>
         <div class="field-wrap">
-          <span class="field-icon">🔑</span>
-          <input class="field-input" id="newPassword" type="password" placeholder="Mínimo 8 caracteres" />
+          <span class="field-icon">▸</span>
+          <input class="field-input" id="newPassword" type="password" placeholder="Mínimo 8 caracteres"/>
           <button class="toggle-pw" type="button" onclick="togglePw('newPassword', this)">👁</button>
         </div>
       </div>
       <div class="field">
         <label class="field-label" for="confirmPassword">Confirmar contraseña</label>
         <div class="field-wrap">
-          <span class="field-icon">🔑</span>
-          <input class="field-input" id="confirmPassword" type="password" placeholder="Repite la contraseña" />
+          <span class="field-icon">▸</span>
+          <input class="field-input" id="confirmPassword" type="password" placeholder="Repite la contraseña"/>
         </div>
       </div>
     </div>
-
-    <button class="btn-submit" id="btnLogin" onclick="handleLogin()">
-      Ingresar →
-    </button>
-
+    <button class="btn-submit" id="btnLogin" onclick="handleLogin()">Ingresar →</button>
     <div class="card-footer">
-      <span class="status-dot"></span>
-      Conexión cifrada · AWS Cognito
+      <span>CIFRADO TLS</span><span class="footer-sep">·</span>
+      <span>AWS COGNITO</span><span class="footer-sep">·</span>
+      <span>SA-EAST-1</span>
     </div>
   </div>
-
 </div>
-
 <script>
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  CONFIGURACIÓN COGNITO
 //  Reemplaza estos valores con los de tu User Pool en AWS Cognito:
@@ -630,6 +382,7 @@ function friendlyError(msg) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') handleLogin();
 });
+
 </script>
 </body>
 </html>
