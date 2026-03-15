@@ -321,6 +321,10 @@
     margin-bottom: 28px;
   }
 
+  .stats-row--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .stat-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -837,14 +841,10 @@
           </div>
         </div>
 
-        <div class="stats-row" id="statsTexts">
+        <div class="stats-row stats-row--2" id="statsTexts">
           <div class="stat-card">
             <div class="stat-label">Total registros</div>
             <div class="stat-value accent" id="statTextCount">—</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Total caracteres</div>
-            <div class="stat-value" id="statTextChars">—</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Último guardado</div>
@@ -1026,8 +1026,6 @@ function filterTexts() {
 
 function updateTextStats(items) {
   document.getElementById('statTextCount').textContent = items.length;
-  const total = items.reduce((s, t) => s + (t.charCount || 0), 0);
-  document.getElementById('statTextChars').textContent = fmtNum(total);
   const last = items[0]?.createdAt;
   document.getElementById('statTextLast').textContent = last ? fmtDate(last) : '—';
 }
